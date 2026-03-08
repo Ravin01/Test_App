@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, '15.1'  # React Native 0.76.6 requires iOS 15.1+
+platform :ios, '16.0'  # React Native 0.76.6 + CodePush require iOS 16.0+
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -40,7 +40,7 @@ target 'FLYKUP' do
     # Fix deployment target for all pods
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
       end
     end
   end
