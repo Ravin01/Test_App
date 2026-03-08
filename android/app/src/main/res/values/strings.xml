@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">FLYKUP</string>
+   <string name="facebook_app_id">1158083455956783</string>
+    <string name="facebook_client_token">PLACEHOLDER</string>
+      <string moduleConfig="true" name="CodePushServerUrl">https://api.revopush.org</string>
+      <!-- Production Key -->
+  <string moduleConfig="true" name="CodePushDeploymentKey">PLACEHOLDER</string>
+  <!-- Staging Key -->
+  <!-- <string moduleConfig="true" name="CodePushDeploymentKey">PLACEHOLDER</string> -->
+  <!-- Developer development key -->
+  <!-- <string moduleConfig="true" name="CodePushDeploymentKey">PLACEHOLDER</string> -->
+</resources>

@@ -1,0 +1,75 @@
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/PictureInPictureUtil.kt b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/PictureInPictureUtil.kt
+index 1234567..abcdefg 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/PictureInPictureUtil.kt
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/PictureInPictureUtil.kt
+@@ -42,7 +42,13 @@ object PictureInPictureUtil {
+         val activity = context.findActivity()
+ 
+         val onPictureInPictureModeChanged = Consumer<PictureInPictureModeChangedInfo> { info ->
+-            view.setIsInPictureInPicture(info.isInPictureInPictureMode)
++            try {
++                view.setIsInPictureInPicture(info.isInPictureInPictureMode)
++            } catch (e: IndexOutOfBoundsException) {
++                DebugLog.e(TAG, "IndexOutOfBoundsException in setIsInPictureInPicture: ${e.message}")
++            } catch (e: Exception) {
++                DebugLog.e(TAG, "Exception in setIsInPictureInPicture: ${e.message}")
++            }
+             if (!info.isInPictureInPictureMode && activity.lifecycle.currentState == Lifecycle.State.CREATED) {
+                 // when user click close button of PIP
+                 if (!view.playInBackground) view.setPausedModifier(true)
+@@ -96,7 +102,11 @@ object PictureInPictureUtil {
+     ) {
+         if (pipParamsBuilder == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+         val actions = getPictureInPictureActions(context, isPaused, receiver)
+-        pipParamsBuilder.setActions(actions)
++        // Only set actions if there are any to avoid IndexOutOfBoundsException
++        if (actions.isNotEmpty()) {
++            pipParamsBuilder.setActions(actions)
++        }
++        
+         updatePictureInPictureActions(context, pipParamsBuilder.build())
+     }
+
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
+index 1234568..abcdef8 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
+@@ -100,6 +100,7 @@ public class ReactExoplayerView extends FrameLayout implements
+     private boolean muted = false;
+     private boolean hasAudioFocus = false;
+     private float rate = 1f;
++    private boolean disableAudioFocusPause = true; // Allow video to play during calls
+ 
+     private float audioVolume = 1f;
+     private int minLoadRetryCount = 3;
+@@ -400,6 +401,12 @@ public class ReactExoplayerView extends FrameLayout implements
+     @Override
+     public void onAudioFocusChange(int focusChange) {
+         switch (focusChange) {
++            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
++                // During calls - only mute audio, don't pause video
++                if (disableAudioFocusPause) {
++                    setMutedModifier(true);
++                    return;
++                }
+             case AudioManager.AUDIOFOCUS_LOSS:
+                 eventEmitter.audioFocusChanged(false);
+                 pausePlayback();
+@@ -407,11 +414,17 @@ public class ReactExoplayerView extends FrameLayout implements
+                 audioVolume = 0.8f;
+                 break;
+             case AudioManager.AUDIOFOCUS_GAIN:
++                // Regained focus - unmute if we muted during call
++                if (disableAudioFocusPause && muted) {
++                    setMutedModifier(false);
++                }
+                 eventEmitter.audioFocusChanged(true);
+                 break;
+             default:
+                 break;
+         }
++        // Don't pause on AUDIOFOCUS_LOSS_TRANSIENT when disableAudioFocusPause is true
++        if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT && disableAudioFocusPause) return;
+         if (player != null) {
+             if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+                 // Lower the volume

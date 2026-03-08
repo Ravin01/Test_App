@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background color -->
+    <item android:drawable="@color/splash_background" />
+    
+    <!-- App Icon - centered with explicit dimensions -->
+    <item
+        android:width="220dp"
+        android:height="220dp"
+        android:drawable="@drawable/splash_logo"
+        android:gravity="center" />
+</layer-list>

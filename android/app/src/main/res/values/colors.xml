@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="splash_background" type="color">#000</item>
+    <color name="bootsplash_background">#000000</color>
+    
+</resources>

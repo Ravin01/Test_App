@@ -1,0 +1,7 @@
+{
+  "react-native": {
+    "crashlytics_debug_enabled": true,
+    "crashlytics_javascript_exception_handler_chaining_enabled": false,
+    "messaging_ios_auto_register_for_remote_messages": true
+  }
+}
