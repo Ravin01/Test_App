@@ -8,17 +8,11 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, '16.0'  # React Native 0.76.6 + CodePush require iOS 16.0+
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+# Use static frameworks for better compatibility with Firebase Swift pods
+use_frameworks! :linkage => :static
 
 target 'FLYKUP' do
   config = use_native_modules!
-  
-  # Enable modular headers for Firebase Swift pods
-  use_modular_headers!
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -40,10 +34,30 @@ target 'FLYKUP' do
       # :ccache_enabled => true
     )
     
-    # Fix deployment target for all pods
+    # Fix deployment target and build settings for all pods
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        
+        # Fix for Firebase Swift integration issues in Xcode 16
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        config.build_settings['SWIFT_VERSION'] = '5.0'
+        
+        # Ensure proper Swift compilation order
+        if target.name.start_with?('Firebase')
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+        end
+      end
+    end
+    
+    # Ensure Firebase Swift modules are built before RNFBApp
+    installer.pods_project.targets.each do |target|
+      if target.name == 'RNFBApp'
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+          config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+        end
       end
     end
   end

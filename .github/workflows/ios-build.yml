@@ -52,15 +52,30 @@ jobs:
       - name: Clean old Podfile.lock and Pods
         run: |
           cd ios
-          rm -rf Pods Podfile.lock
+          rm -rf Pods Podfile.lock build
       
       # Step 6: Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          pod install --repo-update --clean-install
+          pod install --repo-update --clean-install --verbose
       
-      # Step 6: Build iOS app for Simulator (Optimized for Speed)
+      # Step 7: Pre-build Firebase Swift modules
+      - name: Pre-build Firebase Swift modules
+        run: |
+          cd ios
+          echo "🔨 Pre-building Firebase Swift modules to generate headers..."
+          xcodebuild -workspace FLYKUP.xcworkspace \
+            -scheme FLYKUP \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -arch arm64 \
+            -derivedDataPath ${{ github.workspace }}/ios/build \
+            -target FirebaseAuth \
+            -quiet \
+            build 2>&1 | grep -E "error:|warning:|Build succeeded" || true
+      
+      # Step 8: Build iOS app for Simulator
       - name: Build iOS App for Simulator
         run: |
           cd ios
@@ -72,9 +87,11 @@ jobs:
             -derivedDataPath ${{ github.workspace }}/ios/build \
             -parallelizeTargets \
             -jobs 4 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             build
       
-      # Step 7: Find and copy the built app
+      # Step 9: Find and copy the built app
       - name: Locate and prepare build artifacts
         run: |
           cd ios/build/Build/Products/Debug-iphonesimulator
@@ -83,7 +100,7 @@ jobs:
           cp -R FLYKUP.app ${{ github.workspace }}/artifacts/
           echo "Build artifacts prepared"
       
-      # Step 8: Upload build artifacts
+      # Step 10: Upload build artifacts
       - name: Upload iOS Build
         uses: actions/upload-artifact@v4
         if: success()
@@ -92,7 +109,7 @@ jobs:
           path: artifacts/FLYKUP.app
           retention-days: 7
       
-      # Step 8: Upload build logs on failure
+      # Step 11: Upload build logs on failure
       - name: Upload Build Logs (on failure)
         uses: actions/upload-artifact@v4
         if: failure()
@@ -103,7 +120,7 @@ jobs:
             ~/Library/Developer/Xcode/DerivedData/*/Logs
           retention-days: 3
       
-      # Step 9: Build Summary
+      # Step 12: Build Summary
       - name: Build Summary
         if: success()
         run: |
