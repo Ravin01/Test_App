@@ -60,27 +60,33 @@ jobs:
           cd ios
           pod install --repo-update --clean-install
       
-      # Step 6: Build iOS app without signing
-      - name: Build iOS App (No Signing)
+      # Step 6: Build iOS app for Simulator (No Signing Required)
+      - name: Build iOS App for Simulator
         run: |
           cd ios
           xcodebuild -workspace FLYKUP.xcworkspace \
             -scheme FLYKUP \
             -configuration Debug \
-            -sdk iphoneos \
-            -archivePath ${{ github.workspace }}/build/FLYKUP.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            clean archive | xcpretty || true
+            -sdk iphonesimulator \
+            -derivedDataPath ${{ github.workspace }}/ios/build \
+            build
       
-      # Step 7: Upload build artifacts
-      - name: Upload iOS Archive
+      # Step 7: Find and copy the built app
+      - name: Locate and prepare build artifacts
+        run: |
+          cd ios/build/Build/Products/Debug-iphonesimulator
+          ls -la
+          mkdir -p ${{ github.workspace }}/artifacts
+          cp -R FLYKUP.app ${{ github.workspace }}/artifacts/
+          echo "Build artifacts prepared"
+      
+      # Step 8: Upload build artifacts
+      - name: Upload iOS Build
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: ios-build-${{ github.run_number }}
-          path: build/FLYKUP.xcarchive
+          name: ios-simulator-build-${{ github.run_number }}
+          path: artifacts/FLYKUP.app
           retention-days: 7
       
       # Step 8: Upload build logs on failure
