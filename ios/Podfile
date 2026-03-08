@@ -16,6 +16,9 @@ end
 
 target 'FLYKUP' do
   config = use_native_modules!
+  
+  # Enable modular headers for Firebase Swift pods
+  use_modular_headers!
 
   use_react_native!(
     :path => config[:reactNativePath],
