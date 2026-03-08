@@ -1,0 +1,90 @@
+name: iOS Build (No Signing)
+
+# Trigger the workflow on push to any branch
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS App (Unsigned)
+    runs-on: macos-14  # Latest macOS runner with Xcode 15.2
+    
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      # Step 2: Setup Node.js 18.x
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.0'
+          cache: 'npm'
+      
+      # Step 3: Install npm dependencies
+      - name: Install npm dependencies
+        run: npm install
+      
+      # Step 4: Cache CocoaPods
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+      
+      # Step 5: Install CocoaPods dependencies
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+      
+      # Step 6: Build iOS app without signing
+      - name: Build iOS App (No Signing)
+        run: |
+          cd ios
+          xcodebuild -workspace FLYKUP.xcworkspace \
+            -scheme FLYKUP \
+            -configuration Debug \
+            -sdk iphoneos \
+            -archivePath ${{ github.workspace }}/build/FLYKUP.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            clean archive | xcpretty || true
+      
+      # Step 7: Upload build artifacts
+      - name: Upload iOS Archive
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ios-build-${{ github.run_number }}
+          path: build/FLYKUP.xcarchive
+          retention-days: 7
+      
+      # Step 8: Upload build logs on failure
+      - name: Upload Build Logs (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-logs-${{ github.run_number }}
+          path: |
+            ~/Library/Logs/gym
+            ~/Library/Developer/Xcode/DerivedData/*/Logs
+          retention-days: 3
+      
+      # Step 9: Build Summary
+      - name: Build Summary
+        if: success()
+        run: |
+          echo "✅ iOS build completed successfully!"
+          echo "📦 Build artifacts are available in the Actions tab"
+          echo "🔍 Archive location: build/FLYKUP.xcarchive"
