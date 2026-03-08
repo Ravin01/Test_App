@@ -48,20 +48,17 @@ jobs:
           fi
           ls -la node_modules/react-native-svg/scripts/ || echo "Scripts directory check"
       
-      # Step 5: Cache CocoaPods
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+      # Step 5: Clean CocoaPods cache
+      - name: Clean old Podfile.lock and Pods
+        run: |
+          cd ios
+          rm -rf Pods Podfile.lock
       
       # Step 6: Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          pod install --repo-update
+          pod install --repo-update --clean-install
       
       # Step 6: Build iOS app without signing
       - name: Build iOS App (No Signing)
