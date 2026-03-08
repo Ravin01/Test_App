@@ -31,9 +31,14 @@ jobs:
       # Step 3: Install npm dependencies
       - name: Install npm dependencies
         run: |
-          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --no-optional --ignore-scripts
       
-      # Step 4: Verify react-native-svg scripts
+      # Step 4: Rebuild native modules
+      - name: Rebuild native modules
+        run: |
+          npm rebuild --legacy-peer-deps
+      
+      # Step 5: Verify react-native-svg scripts
       - name: Verify react-native-svg installation
         run: |
           if [ ! -f "node_modules/react-native-svg/scripts/rnsvg_utils.rb" ]; then
