@@ -30,9 +30,20 @@ jobs:
       
       # Step 3: Install npm dependencies
       - name: Install npm dependencies
-        run: npm install
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
       
-      # Step 4: Cache CocoaPods
+      # Step 4: Verify react-native-svg scripts
+      - name: Verify react-native-svg installation
+        run: |
+          if [ ! -f "node_modules/react-native-svg/scripts/rnsvg_utils.rb" ]; then
+            echo "⚠️ react-native-svg scripts not found, reinstalling..."
+            rm -rf node_modules/react-native-svg
+            npm install react-native-svg --legacy-peer-deps
+          fi
+          ls -la node_modules/react-native-svg/scripts/ || echo "Scripts directory check"
+      
+      # Step 5: Cache CocoaPods
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
@@ -41,11 +52,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
       
-      # Step 5: Install CocoaPods dependencies
+      # Step 6: Install CocoaPods dependencies
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          pod install
+          pod install --repo-update
       
       # Step 6: Build iOS app without signing
       - name: Build iOS App (No Signing)
