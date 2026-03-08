@@ -60,7 +60,7 @@ jobs:
           cd ios
           pod install --repo-update --clean-install
       
-      # Step 6: Build iOS app for Simulator (No Signing Required)
+      # Step 6: Build iOS app for Simulator (Optimized for Speed)
       - name: Build iOS App for Simulator
         run: |
           cd ios
@@ -68,7 +68,10 @@ jobs:
             -scheme FLYKUP \
             -configuration Debug \
             -sdk iphonesimulator \
+            -arch arm64 \
             -derivedDataPath ${{ github.workspace }}/ios/build \
+            -parallelizeTargets \
+            -jobs 4 \
             build
       
       # Step 7: Find and copy the built app
